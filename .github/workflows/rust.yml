@@ -39,7 +39,7 @@ jobs:
         uses: taiki-e/upload-rust-binary-action@v1
         with:
           # (required) The name of the binary produced by your project (e.g. "my-app")
-          bin: your_binary_name
+          bin: a3mp
           target: ${{ matrix.target }}
           upload_url: ${{ needs.create-release.outputs.upload_url }}
         env:
