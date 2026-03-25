@@ -1,41 +1,46 @@
 name: Release
 
-permissions:
-  contents: write
-
 on:
   push:
     tags:
-      - v[0-9]+.*
+      - 'v[0-9]+.[0-9]+.[0-9]+*' # Trigger on tags like v1.0.0 or v1.0.0-beta
 
 jobs:
-  release:
-    name: Release - ${{ matrix.platform.os_name }}
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create GitHub Release
+        id: create_release
+        uses: taiki-e/create-gh-release-action@v1
+        with:
+          # (optional) set this to true if you want to create a draft release
+          draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-and-release:
+    needs: create-release
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        platform:
-          - os_name: Linux-x86_64
-            os: ubuntu-24.04
-            target: x86_64-unknown-linux-musl
-
-          - os_name: macOS-x86_64
-            os: macOS-latest
-            target: x86_64-apple-darwin
-            # more release targets here ...
-
-    runs-on: ${{ matrix.platform.os }}
+        target: [x86_64-unknown-linux-gnu, x86_64-pc-windows-msvc, x86_64-apple-darwin]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-      - name: Build executable
-        uses: houseabsolute/actions-rust-cross@v0
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          target: ${{ matrix.platform.target }}
-          args: "--locked --release"
-          strip: true
-      - name: Publish artifacts and release
-        uses: houseabsolute/actions-rust-release@v0.0.7
+          toolchain: stable
+          target: ${{ matrix.target }}
+
+      - name: Build and upload Rust binary
+        uses: taiki-e/upload-rust-binary-action@v1
         with:
-          executable-name: ubi
-          target: ${{ matrix.platform.target }}
-        #if: matrix.toolchain == null
+          # (required) The name of the binary produced by your project (e.g. "my-app")
+          bin: your_binary_name
+          target: ${{ matrix.target }}
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
