@@ -21,7 +21,6 @@ jobs:
           - os_name: macOS-x86_64
             os: macOS-latest
             target: x86_64-apple-darwin
-
             # more release targets here ...
 
     runs-on: ${{ matrix.platform.os }}
@@ -35,8 +34,8 @@ jobs:
           args: "--locked --release"
           strip: true
       - name: Publish artifacts and release
-        uses: houseabsolute/actions-rust-release@v0
+        uses: houseabsolute/actions-rust-release@v0.0.7
         with:
           executable-name: ubi
           target: ${{ matrix.platform.target }}
-        #if: matrix.toolchain == 'stable'
+        #if: matrix.toolchain == null
